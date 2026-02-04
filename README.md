@@ -15,9 +15,15 @@ This system was built to solve the manual tracking capabilities of small organiz
 **Key Features:**
 - **Secure Authentication:** JWT-based login with password hashing.
 - **Attendance Tracking:** One-click attendance marking with strictly enforced rules (e.g., no future dates).
-- **Leave Management:** Complete lifecycle handling (Apply -> Pending -> Approve/Reject) with Email Notifications.
+- **Leave Management:** Complete lifecycle handling (Apply -> Pending -> Approve/Reject).
 - **Dashboards:** Dedicated views for Employees (personal stats) and Admins (organization-wide oversight).
-- **Reports:** Monthly attendance reports with CSV Export functionality.
+
+### 🏆 Bonus Features Implemented
+We went the extra mile to include advanced features:
+- **📧 Real Email Notifications:** Integrated **Nodemailer** to send actual emails to employees when their leave status changes.
+- **📊 Monthly Reports & CSV Export:** Admins can generate and download detailed monthly attendance reports.
+- **🔍 Advanced Filtering & Pagination:** Implemented server-side pagination and dynamic filters (by Date, Status, Employee Name) for large datasets.
+- **⚙️ Auto Absent System:** Intelligent background logic that automatically marks "Absent" for missed days.
 
 ---
 
@@ -147,6 +153,7 @@ This project was developed with a hybrid approach, leveraging AI tools to enhanc
 | **UI Design & CSS** | **Claude** | Used to generate clean, modern aesthetically pleasing UI components (gradients, cards, responsive tables) using Tailwind CSS. |
 | **Frontend logic** | **GitHub Copilot** | Assisted in writing repetitive boilerplate code for API service calls (`axios` setup) and form state handling. |
 | **Advanced Features** | **ChatGPT / Copilot** | Utilized for optimizing the Nodemailer configuration and generating the CSV Export logic (Blob creation). |
+| **Auto Absent Logic** | **GitHub Copilot** | Generated the logic for automatically marking "Absent" for past days using date comparisons. |
 | **Business Logic** | **Manual / ChatGPT** | Core logic for "Leave Balance Deduction", "Date Overlap Checks", and "Weekend Exclusion" was implemented manually with efficiency suggestions from ChatGPT. |
 
 **Statement of Originality:** While AI tools assisted in syntax generation and UI styling, the underlying business rules, validation logic, and integration of components were implemented and verified manually to meet the specific assignment requirements.
