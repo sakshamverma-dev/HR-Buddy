@@ -1,14 +1,7 @@
-import axios from 'axios';
-
-const API_URL = 'http://localhost:5000/api/reports';
+import api from './api';
 
 // Get monthly attendance report
 export const getMonthlyReport = async (month, year) => {
-    const token = localStorage.getItem('token');
-    const response = await axios.get(`${API_URL}/monthly?month=${month}&year=${year}`, {
-        headers: {
-            Authorization: `Bearer ${token}`,
-        },
-    });
+    const response = await api.get(`/reports/monthly?month=${month}&year=${year}`);
     return response.data;
 };

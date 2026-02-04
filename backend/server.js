@@ -52,32 +52,39 @@ app.use((err, req, res, next) => {
 });
 
 // Start server
+// Start server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
 
+module.exports = app;
+
 // Admin seed function (automatically creates admin user from .env credentials)
 const seedAdmin = async () => {
-    const User = require('./models/User');
+    try {
+        const User = require('./models/User');
 
-    const adminEmail = process.env.ADMIN_EMAIL;
-    const adminExists = await User.findOne({ email: adminEmail });
+        const adminEmail = process.env.ADMIN_EMAIL;
+        const adminExists = await User.findOne({ email: adminEmail });
 
-    if (!adminExists) {
-        await User.create({
-            fullName: process.env.ADMIN_NAME,
-            email: adminEmail,
-            password: process.env.ADMIN_PASSWORD,
-            role: 'admin',
-            dateOfJoining: new Date(),
-            leaveBalance: 0,
-        });
-        console.log(`Admin user created: ${adminEmail} / ${process.env.ADMIN_PASSWORD}`);
-    } else {
-        console.log('Admin user already exists');
+        if (!adminExists) {
+            await User.create({
+                fullName: process.env.ADMIN_NAME,
+                email: adminEmail,
+                password: process.env.ADMIN_PASSWORD,
+                role: 'admin',
+                dateOfJoining: new Date(),
+                leaveBalance: 0,
+            });
+            console.log(`Admin user created: ${adminEmail} / ${process.env.ADMIN_PASSWORD}`);
+        } else {
+            console.log('Admin user already exists');
+        }
+    } catch (error) {
+        console.error('Seed Admin Error:', error.message);
     }
 };
 
 // Auto-seed admin on server start
-seedAdmin();
+seedAdmin().catch(err => console.error('Seed Admin Access Error:', err));

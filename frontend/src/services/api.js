@@ -1,7 +1,9 @@
 import axios from 'axios';
 
+const BASE_URL = 'https://hr-buddy-backend-theta.vercel.app/api';
+
 const api = axios.create({
-    baseURL: '/api',
+    baseURL: BASE_URL,
     headers: {
         'Content-Type': 'application/json',
     },

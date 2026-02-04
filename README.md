@@ -1,319 +1,166 @@
-# Employee Leave & Attendance Management System
+# Employee Leave & Attendance Management System (HR Buddy)
 
-A full-stack MERN (MongoDB, Express, React, Node.js) application for managing employee leave requests and attendance tracking with role-based access control.
+> **HR Buddy** is a modern, full-stack "Mini HR Tool" designed to streamline employee management. It allows employees to mark attendance and apply for leave, while providing Admins with powerful tools to manage requests and view reports.
 
-## 🚀 Features
+**Deployed Application:**
+- **Frontend:** [https://hrbuddy.vercel.app/](https://hrbuddy.vercel.app/)
+- **Backend:** [https://hr-buddy-backend-theta.vercel.app/](https://hr-buddy-backend-theta.vercel.app/)
 
-### Authentication & Authorization
-- ✅ User registration and login
-- ✅ JWT-based authentication
-- ✅ Password hashing with bcrypt
-- ✅ Role-based access control (Employee & Admin)
-- ✅ Protected routes on frontend and backend
+---
 
-### Employee Features
-- ✅ Apply for leave (Sick, Casual, Vacation)
-- ✅ View leave history
-- ✅ Edit pending leave requests
-- ✅ Cancel pending leave requests
-- ✅ Mark daily attendance (Present/Absent)
-- ✅ View attendance history
-- ✅ Dashboard with leave balance and statistics
-- ✅ Default leave balance: 20 days
+## 📌 Project Overview
 
-### Admin Features
-- ✅ View all leave requests
-- ✅ Approve/Reject leave requests
-- ✅ View all attendance records
-- ✅ View all employees
-- ✅ Filter and search functionality
-- ✅ Dashboard with system statistics
+This system was built to solve the manual tracking capabilities of small organizations. It features a complete **Role-Based Access Control (RBAC)** system separating Employees and Admins.
 
-## 🛠️ Tech Stack
+**Key Features:**
+- **Secure Authentication:** JWT-based login with password hashing.
+- **Attendance Tracking:** One-click attendance marking with strictly enforced rules (e.g., no future dates).
+- **Leave Management:** Complete lifecycle handling (Apply -> Pending -> Approve/Reject) with Email Notifications.
+- **Dashboards:** Dedicated views for Employees (personal stats) and Admins (organization-wide oversight).
+- **Reports:** Monthly attendance reports with CSV Export functionality.
 
-### Frontend
-- **React 18** - UI library
-- **Vite** - Build tool and dev server
-- **Tailwind CSS** - Utility-first CSS framework
-- **React Router DOM** - Client-side routing
-- **Axios** - HTTP client
-- **Context API** - State management
+---
 
-### Backend
-- **Node.js** - Runtime environment
-- **Express** - Web framework
-- **MongoDB** - NoSQL database
-- **Mongoose** - MongoDB ODM
-- **JWT** - Authentication tokens
-- **bcryptjs** - Password hashing
-- **CORS** - Cross-origin resource sharing
+## 🛠 Tech Stack & Justification
 
-## 📁 Project Structure
+| Technology | Usage | Justification |
+| :--- | :--- | :--- |
+| **MongoDB** | Database | Flexible schema design perfect for evolving implementations like Leave/Attendance records. |
+| **Express.js** | Backend Framework | Minimalist and fast web framework for Node.js to handle API routing efficiently. |
+| **React (Vite)** | Frontend | chosen for its component-based architecture and Vite's superior build performance over CRA. |
+| **Node.js** | Runtime | Unified JavaScript environment allowing code sharing and consistent logic across the stack. |
+| **Tailwind CSS** | Styling | Utility-first CSS framework for rapid UI development and responsive design without context switching. |
 
-```
-hr-system/
-├── backend/
-│   ├── config/
-│   │   └── db.js                 # MongoDB connection
-│   ├── controllers/
-│   │   ├── authController.js     # Authentication logic
-│   │   ├── leaveController.js    # Leave management logic
-│   │   └── attendanceController.js # Attendance logic
-│   ├── middleware/
-│   │   ├── auth.js               # JWT verification
-│   │   └── roleCheck.js          # Role-based access
-│   ├── models/
-│   │   ├── User.js               # User schema
-│   │   ├── Leave.js              # Leave schema
-│   │   └── Attendance.js         # Attendance schema
-│   ├── routes/
-│   │   ├── authRoutes.js         # Auth endpoints
-│   │   ├── leaveRoutes.js        # Leave endpoints
-│   │   └── attendanceRoutes.js   # Attendance endpoints
-│   ├── .env.example              # Environment variables template
-│   ├── .gitignore
-│   ├── package.json
-│   └── server.js                 # Entry point
-│
-└── frontend/
-    ├── src/
-    │   ├── components/
-    │   │   ├── Navbar.jsx        # Navigation component
-    │   │   ├── ProtectedRoute.jsx # Auth guard
-    │   │   └── AdminRoute.jsx    # Admin guard
-    │   ├── context/
-    │   │   └── AuthContext.jsx   # Auth state management
-    │   ├── pages/
-    │   │   ├── Login.jsx
-    │   │   ├── Signup.jsx
-    │   │   ├── EmployeeDashboard.jsx
-    │   │   ├── ApplyLeave.jsx
-    │   │   ├── LeaveHistory.jsx
-    │   │   ├── MarkAttendance.jsx
-    │   │   ├── AttendanceHistory.jsx
-    │   │   ├── AdminDashboard.jsx
-    │   │   ├── AllLeaveRequests.jsx
-    │   │   ├── AllAttendance.jsx
-    │   │   └── AllEmployees.jsx
-    │   ├── services/
-    │   │   ├── api.js            # Axios instance
-    │   │   ├── authService.js    # Auth API calls
-    │   │   ├── leaveService.js   # Leave API calls
-    │   │   └── attendanceService.js # Attendance API calls
-    │   ├── App.jsx               # Main app component
-    │   ├── main.jsx              # Entry point
-    │   └── index.css             # Global styles
-    ├── index.html
-    ├── vite.config.js
-    ├── tailwind.config.js
-    ├── postcss.config.js
-    ├── .gitignore
-    └── package.json
-```
+---
 
-## 🚦 Getting Started
+## 🚀 Installation & Setup
 
-### Prerequisites
-- Node.js (v14 or higher)
-- MongoDB (local or Atlas)
-- npm or yarn
+Follow these steps to run the project locally.
 
-### Installation
-
-#### 1. Clone the repository
+### 1. Clone the Repository
 ```bash
-cd s:/hr-system
+git clone <repository-url>
+cd hr-buddy
 ```
 
-#### 2. Backend Setup
-
+### 2. Backend Setup
 ```bash
-# Navigate to backend directory
 cd backend
-
-# Install dependencies
-npm install
-
-# Create .env file
-copy .env.example .env
-
-# Edit .env file with your configuration
-# MONGO_URI=mongodb://localhost:27017/hr-system
-# JWT_SECRET=your_super_secret_jwt_key_change_this_in_production
-# PORT=5000
-```
-
-#### 3. Frontend Setup
-
-```bash
-# Navigate to frontend directory
-cd ../frontend
-
-# Install dependencies
 npm install
 ```
 
-### Running the Application
+**Configure Environment Variables:**
+Create a `.env` file in the `backend` directory:
+```env
+PORT=5000
+MONGO_URI=your_mongodb_connection_string
+JWT_SECRET=your_secure_random_string
+ADMIN_NAME=Admin User
+ADMIN_EMAIL=admin@gmail.com
+ADMIN_PASSWORD=admin123
+MAIL_USER=your_email@gmail.com
+MAIL_PASS=your_app_password
+```
 
-#### Start Backend Server
+**Start the Server:**
 ```bash
-cd backend
 npm start
-# Server runs on http://localhost:5000
 ```
+*Server runs on http://localhost:5000*
 
-#### Start Frontend Dev Server
+### 3. Frontend Setup
 ```bash
 cd frontend
+npm install
+```
+
+**Configure Vercel/Proxy or Env:**
+Create a `.env` file in `frontend`:
+```env
+VITE_API_URL=http://localhost:5000
+```
+
+**Start the Client:**
+```bash
 npm run dev
-# App runs on http://localhost:3000
 ```
+*Client runs on http://localhost:5173*
 
-## 🔐 Admin Credentials
-
-To create an admin account, uncomment the following line in `backend/server.js`:
-
-```javascript
-// Line 48
-seedAdmin();
-```
-
-Then restart the backend server. The admin account will be created with:
-
-- **Email:** admin@hrms.com
-- **Password:** admin123
-
-**Important:** Comment out the `seedAdmin()` line after the first run to prevent duplicate admin creation.
+---
 
 ## 📡 API Endpoints
 
 ### Authentication
-- `POST /api/auth/register` - Register new user
-- `POST /api/auth/login` - Login user
-- `GET /api/auth/me` - Get current user profile (Protected)
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| POST | `/api/auth/register` | Register a new employee |
+| POST | `/api/auth/login` | Login user & get JWT |
+| GET | `/api/auth/me` | Get current user profile |
 
-### Leave Management
-- `POST /api/leave/apply` - Apply for leave (Employee)
-- `GET /api/leave/my` - Get my leaves (Employee)
-- `PUT /api/leave/edit/:id` - Edit pending leave (Employee)
-- `DELETE /api/leave/cancel/:id` - Cancel pending leave (Employee)
-- `GET /api/leave/all` - Get all leaves (Admin)
-- `PUT /api/leave/status/:id` - Approve/Reject leave (Admin)
-
-### Attendance
-- `POST /api/attendance/mark` - Mark attendance (Employee)
-- `GET /api/attendance/my` - Get my attendance (Employee)
-- `GET /api/attendance/all` - Get all attendance (Admin)
-
-## 🎨 UI Features
-
-### Design Highlights
-- Modern, clean interface with Tailwind CSS
-- Responsive design (mobile, tablet, desktop)
-- Gradient cards and visual statistics
-- Status badges (Pending, Approved, Rejected, Present, Absent)
-- Interactive forms with validation
-- Loading states and error handling
-- Role-based navigation
-
-### Color Scheme
-- Primary: Blue (#3b82f6)
-- Success: Green (#10b981)
-- Warning: Yellow (#f59e0b)
-- Danger: Red (#ef4444)
-
-## 🔒 Security Features
-
-- Password hashing with bcrypt (10 salt rounds)
-- JWT token-based authentication
-- Protected API routes with middleware
-- Role-based access control
-- Token stored in localStorage
-- Automatic token refresh on API calls
-- Secure password validation (min 6 characters)
-
-## 📝 Business Logic
-
-### Leave Management
-- Employees start with 20 days leave balance
-- Total days calculated automatically (inclusive of start and end dates)
-- Leave balance checked before approval
-- Only pending leaves can be edited or cancelled
-- Leave balance deducted only after admin approval
+### Leaves
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| POST | `/api/leave/apply` | Apply for new leave |
+| GET | `/api/leave/my` | Get current user's leaves |
+| GET | `/api/leave/all` | **(Admin)** Get all leave requests |
+| PUT | `/api/leave/status/:id` | **(Admin)** Approve/Reject leave |
+| PUT | `/api/leave/edit/:id` | Edit pending leave request |
+| DELETE | `/api/leave/cancel/:id` | Cancel pending leave request |
 
 ### Attendance
-- One attendance record per employee per day
-- Cannot mark attendance for future dates
-- Attendance can only be marked for today or past dates
-- Duplicate attendance prevention
-
-## 🧪 Testing the Application
-
-### Test Flow for Employees
-1. Register a new employee account
-2. Login with credentials
-3. View dashboard with leave balance
-4. Apply for leave
-5. View leave history
-6. Mark today's attendance
-7. View attendance history
-
-### Test Flow for Admin
-1. Login with admin credentials
-2. View admin dashboard with statistics
-3. Review pending leave requests
-4. Approve/Reject leaves
-5. View all attendance records
-6. View employee directory
-
-## 🚀 Deployment
-
-### Backend Deployment (Example: Heroku)
-```bash
-# In backend directory
-heroku create your-app-name
-heroku config:set MONGO_URI=your_mongodb_uri
-heroku config:set JWT_SECRET=your_secret
-git push heroku main
-```
-
-### Frontend Deployment (Example: Vercel)
-```bash
-# In frontend directory
-npm run build
-vercel --prod
-```
-
-## 🐛 Troubleshooting
-
-### MongoDB Connection Issues
-- Ensure MongoDB is running locally or check Atlas connection string
-- Verify network access in MongoDB Atlas
-- Check firewall settings
-
-### CORS Errors
-- Ensure backend CORS is configured correctly
-- Check Vite proxy configuration in `vite.config.js`
-
-### Token Errors
-- Clear localStorage and login again
-- Verify JWT_SECRET is set in backend .env
-
-## 📄 License
-
-This project is open source and available under the MIT License.
-
-## 👨‍💻 Author
-
-Full Stack MERN Developer
-
-## 🙏 Acknowledgments
-
-- React team for the amazing library
-- Tailwind CSS for the utility-first framework
-- MongoDB for the flexible database
-- Express team for the robust backend framework
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| POST | `/api/attendance/mark` | Mark attendance for today |
+| GET | `/api/attendance/my` | Get individual attendance history |
+| GET | `/api/attendance/all` | **(Admin)** Get all employees' attendance |
 
 ---
 
-**Note:** This is a complete, production-ready application. All features are fully implemented and tested. No placeholders or pseudo-code.
+## 🗄️ Database Models
+
+1.  **User**: Stores Employee details, Role ('admin'/'employee'), Password Hash, and **Leave Balance**.
+2.  **Leave**: Links to `User`. Stores Start/End Date, Type, Reason, and Status.
+3.  **Attendance**: Links to `User`. Stores Date and Status ('Present'/'Absent').
+
+**Relationships:**
+- A `User` has many `Leave` requests.
+- A `User` has many `Attendance` records.
+
+---
+
+## 🔑 Admin Credentials (Seeded)
+
+The system automatically seeds an Admin account on first run if configured in `.env`.
+
+*   **Email:** `admin@gmail.com`
+*   **Password:** `admin123`
+
+---
+
+## 🤖 AI Tools Declaration & Usage
+
+This project was developed with a hybrid approach, leveraging AI tools to enhance efficiency while manually implementing core business logic and structure.
+
+| Component | Tool Used | Contribution Detail |
+| :--- | :--- | :--- |
+| **Project Structure** | **Manual** | Folder structure (MVC), database schema design, and API route planning were designed manually to ensure scalability. |
+| **UI Design & CSS** | **Claude** | Used to generate clean, modern aesthetically pleasing UI components (gradients, cards, responsive tables) using Tailwind CSS. |
+| **Frontend logic** | **GitHub Copilot** | Assisted in writing repetitive boilerplate code for API service calls (`axios` setup) and form state handling. |
+| **Advanced Features** | **ChatGPT / Copilot** | Utilized for optimizing the Nodemailer configuration and generating the CSV Export logic (Blob creation). |
+| **Business Logic** | **Manual / ChatGPT** | Core logic for "Leave Balance Deduction", "Date Overlap Checks", and "Weekend Exclusion" was implemented manually with efficiency suggestions from ChatGPT. |
+
+**Statement of Originality:** While AI tools assisted in syntax generation and UI styling, the underlying business rules, validation logic, and integration of components were implemented and verified manually to meet the specific assignment requirements.
+
+---
+
+## ⚠️ Known Limitations
+
+1.  **Free Tier Hosting:** Takes a few seconds to "wake up" the server on the first request after inactivity.
+2.  **Email Limits:** Uses Gmail SMTP which has daily sending limits; suitable for development/demo only.
+
+---
+
+## ⏱️ Time Spent
+
+**Approximately 15-20 Hours**
+(Includes: Design, Development, Testing, Debugging, and Documentation)
