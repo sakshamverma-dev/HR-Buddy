@@ -38,7 +38,7 @@ app.use('/api/reports', reportRoutes);
 
 // Root route
 app.get('/', (req, res) => {
-    res.json({ message: 'HR Buddy is running' });
+    res.json({ message: 'HR System API is running' });
 });
 
 // Error handling middleware
