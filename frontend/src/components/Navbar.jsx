@@ -6,11 +6,17 @@ const Navbar = () => {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
 
     const handleLogout = () => {
+        setIsLogoutModalOpen(true);
+        setMobileMenuOpen(false);
+    };
+
+    const confirmLogout = () => {
         logout();
         navigate('/');
-        setMobileMenuOpen(false);
+        setIsLogoutModalOpen(false);
     };
 
     const closeMobileMenu = () => {
@@ -296,6 +302,39 @@ const Navbar = () => {
                     className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden transition-opacity duration-300"
                     onClick={closeMobileMenu}
                 ></div>
+            )}
+
+            {/* Logout Confirmation Modal */}
+            {isLogoutModalOpen && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden transform transition-all scale-100 opacity-100 animate-fade-in-up">
+                        <div className="p-6 text-center">
+                            <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+                                <svg className="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                                </svg>
+                            </div>
+                            <h3 className="text-lg font-bold text-gray-900 mb-2">Confirm Logout</h3>
+                            <p className="text-sm text-gray-500 mb-6">
+                                Are you sure you want to log out?
+                            </p>
+                            <div className="flex justify-center space-x-3">
+                                <button
+                                    onClick={() => setIsLogoutModalOpen(false)}
+                                    className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={confirmLogout}
+                                    className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg shadow-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                                >
+                                    Yes, Logout
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             )}
         </nav>
     );
