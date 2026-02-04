@@ -169,5 +169,5 @@ This project was developed with a hybrid approach, leveraging AI tools to enhanc
 
 ## ⏱️ Time Spent
 
-**Approximately 24-30 Hours**
+**15-20 hrs**
 (Includes: Design, Development, Testing, Debugging, and Documentation)
