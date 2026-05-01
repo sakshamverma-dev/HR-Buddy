@@ -1,27 +1,30 @@
 const mongoose = require('mongoose');
 
-const connectDB = async () => {
-  try {
-    mongoose.connection.on('connected', () => {
-      console.log('Mongoose connected to DB.');
-    });
-    mongoose.connection.on('error', (err) => {
-      console.error('Mongoose connection error:', err.message);
-    });
-    mongoose.connection.on('disconnected', () => {
-      console.log('Mongoose disconnected from DB. Trying to reconnect...');
-    });
+let isConnected = false;
 
+const connectDB = async () => {
+  if (isConnected) {
+    console.log('Using existing database connection');
+    return;
+  }
+
+  try {
     const conn = await mongoose.connect(process.env.MONGO_URI, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
       family: 4, // Force IPv4
-      serverSelectionTimeoutMS: 30000, // Increase timeout to 30s
+      serverSelectionTimeoutMS: 15000, // 15 seconds
     });
+    
+    isConnected = conn.connections[0].readyState === 1;
     console.log(`MongoDB Connected: ${conn.connection.host}`);
   } catch (error) {
     console.error(`Error: ${error.message}`);
     console.error('Stack:', error.stack);
+    // Don't exit process in serverless
+    if (process.env.NODE_ENV !== 'production') {
+        process.exit(1);
+    }
   }
 };
 
