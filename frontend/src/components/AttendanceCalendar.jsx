@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-const AttendanceCalendar = ({ attendanceRecords }) => {
+const AttendanceCalendar = ({ attendanceRecords, leaveRecords = [] }) => {
     const [currentDate, setCurrentDate] = useState(new Date());
 
     // Get month and year
@@ -15,25 +15,53 @@ const AttendanceCalendar = ({ attendanceRecords }) => {
     const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
         'July', 'August', 'September', 'October', 'November', 'December'];
 
+    // Helper: local date string YYYY-MM-DD (avoids UTC timezone shift)
+    const toLocalDateString = (date) => {
+        const d = new Date(date);
+        const yr = d.getFullYear();
+        const mo = String(d.getMonth() + 1).padStart(2, '0');
+        const dy = String(d.getDate()).padStart(2, '0');
+        return `${yr}-${mo}-${dy}`;
+    };
+
     // Create attendance map for quick lookup
     const attendanceMap = {};
     attendanceRecords.forEach(record => {
-        const dateKey = new Date(record.date).toISOString().split('T')[0];
+        const dateKey = toLocalDateString(new Date(record.date));
         attendanceMap[dateKey] = record.status;
     });
 
+    // Build leave date set — expand each leave's date range, skip Sundays
+    // Only show Pending and Approved leaves (not Rejected)
+    const leaveDateMap = {}; // dateKey -> leave status (Approved / Pending)
+    leaveRecords.forEach(leave => {
+        if (!['Approved', 'Pending'].includes(leave.status)) return;
+
+        const start = new Date(leave.startDate);
+        const end = new Date(leave.endDate);
+        start.setHours(0, 0, 0, 0);
+        end.setHours(0, 0, 0, 0);
+
+        let cur = new Date(start);
+        while (cur <= end) {
+            if (cur.getDay() !== 0) { // skip Sundays
+                const dk = toLocalDateString(cur);
+                // Approved takes priority over Pending
+                if (!leaveDateMap[dk] || leave.status === 'Approved') {
+                    leaveDateMap[dk] = leave.status;
+                }
+            }
+            cur.setDate(cur.getDate() + 1);
+        }
+    });
+
     // Navigate months
-    const prevMonth = () => {
-        setCurrentDate(new Date(year, month - 1, 1));
-    };
+    const prevMonth = () => setCurrentDate(new Date(year, month - 1, 1));
+    const nextMonth = () => setCurrentDate(new Date(year, month + 1, 1));
+    const goToday  = () => setCurrentDate(new Date());
 
-    const nextMonth = () => {
-        setCurrentDate(new Date(year, month + 1, 1));
-    };
-
-    const today = () => {
-        setCurrentDate(new Date());
-    };
+    // Today's local date string for comparison
+    const todayDateString = toLocalDateString(new Date());
 
     // Generate calendar days
     const calendarDays = [];
@@ -46,35 +74,52 @@ const AttendanceCalendar = ({ attendanceRecords }) => {
     // Days of the month
     for (let day = 1; day <= daysInMonth; day++) {
         const dateObj = new Date(year, month, day);
-        const dateKey = dateObj.toISOString().split('T')[0];
-        const status = attendanceMap[dateKey];
-        const isToday = dateKey === new Date().toISOString().split('T')[0];
+        const dateKey = toLocalDateString(dateObj);
+        const attendStatus = attendanceMap[dateKey];
+        const leaveStatus  = leaveDateMap[dateKey];
+        const isToday  = dateKey === todayDateString;
         const isSunday = dateObj.getDay() === 0;
 
-        let bgColor = 'bg-gray-50 hover:bg-gray-100';
-        let textColor = 'text-gray-700';
-        let statusDot = null;
+        let bgColor    = 'bg-gray-50 hover:bg-gray-100';
+        let textColor  = 'text-gray-700';
+        let statusDot  = null;
 
-        if (status === 'Present') {
-            bgColor = 'bg-green-100 hover:bg-green-200';
+        // Priority: Sunday > Leave > Present > Absent > default
+        if (isSunday) {
+            bgColor   = 'bg-gray-100';
+            textColor = 'text-gray-400';
+        } else if (leaveStatus) {
+            // Orange for Approved, amber-yellow for Pending
+            const isApproved = leaveStatus === 'Approved';
+            bgColor   = isApproved
+                ? 'bg-orange-100 hover:bg-orange-200'
+                : 'bg-amber-100 hover:bg-amber-200';
+            textColor = isApproved ? 'text-orange-800' : 'text-amber-800';
+            statusDot = (
+                <div
+                    className={`w-2 h-2 rounded-full mx-auto mt-1 ${
+                        isApproved ? 'bg-orange-500' : 'bg-amber-400'
+                    }`}
+                ></div>
+            );
+        } else if (attendStatus === 'Present') {
+            bgColor   = 'bg-green-100 hover:bg-green-200';
             textColor = 'text-green-800';
             statusDot = <div className="w-2 h-2 bg-green-500 rounded-full mx-auto mt-1"></div>;
-        } else if (status === 'Absent') {
-            bgColor = 'bg-red-100 hover:bg-red-200';
+        } else if (attendStatus === 'Absent') {
+            bgColor   = 'bg-red-100 hover:bg-red-200';
             textColor = 'text-red-800';
             statusDot = <div className="w-2 h-2 bg-red-500 rounded-full mx-auto mt-1"></div>;
-        } else if (isSunday) {
-            bgColor = 'bg-gray-100';
-            textColor = 'text-gray-400';
         }
 
         calendarDays.push(
             <div
                 key={day}
-                className={`h-12 flex flex-col items-center justify-center rounded-lg transition-colors ${bgColor} ${isToday ? 'ring-2 ring-primary-500' : ''
-                    }`}
+                className={`h-12 flex flex-col items-center justify-center rounded-lg transition-colors ${bgColor} ${
+                    isToday ? 'ring-2 ring-primary-500' : ''
+                }`}
             >
-                <span className={`text-sm font-medium ${textColor}`}>{day}</span>
+                <span className={`text-sm font-medium ${textColor} ${isToday ? 'font-bold' : ''}`}>{day}</span>
                 {statusDot}
             </div>
         );
@@ -97,7 +142,7 @@ const AttendanceCalendar = ({ attendanceRecords }) => {
                         </svg>
                     </button>
                     <button
-                        onClick={today}
+                        onClick={goToday}
                         className="px-3 py-1 text-sm font-medium text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
                     >
                         Today
@@ -116,9 +161,9 @@ const AttendanceCalendar = ({ attendanceRecords }) => {
 
             {/* Weekday headers */}
             <div className="grid grid-cols-7 gap-2 mb-2">
-                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                    <div key={day} className="text-center text-xs font-semibold text-gray-600 py-2">
-                        {day}
+                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => (
+                    <div key={d} className="text-center text-xs font-semibold text-gray-600 py-2">
+                        {d}
                     </div>
                 ))}
             </div>
@@ -143,6 +188,18 @@ const AttendanceCalendar = ({ attendanceRecords }) => {
                             <div className="w-2 h-2 bg-red-500 rounded-full"></div>
                         </div>
                         <span className="text-sm text-gray-700">Absent</span>
+                    </div>
+                    <div className="flex items-center">
+                        <div className="w-4 h-4 bg-orange-100 rounded mr-2 flex items-center justify-center">
+                            <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                        </div>
+                        <span className="text-sm text-gray-700">Leave (Approved)</span>
+                    </div>
+                    <div className="flex items-center">
+                        <div className="w-4 h-4 bg-amber-100 rounded mr-2 flex items-center justify-center">
+                            <div className="w-2 h-2 bg-amber-400 rounded-full"></div>
+                        </div>
+                        <span className="text-sm text-gray-700">Leave (Pending)</span>
                     </div>
                     <div className="flex items-center">
                         <div className="w-4 h-4 bg-gray-100 rounded mr-2"></div>

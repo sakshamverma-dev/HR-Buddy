@@ -10,6 +10,7 @@ const AdminDashboard = () => {
         pendingLeaves: 0,
         todayPresent: 0,
         todayAbsent: 0,
+        todayOnLeave: 0,
     });
     const [loading, setLoading] = useState(true);
 
@@ -50,7 +51,7 @@ const AdminDashboard = () => {
                     </div>
 
                     {/* Stats Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
                         <div className="card bg-gradient-to-br from-primary-500 to-primary-600 text-white animate-slide-up delay-100 hover-lift">
                             <div className="flex items-center justify-between">
                                 <div>
@@ -95,6 +96,18 @@ const AdminDashboard = () => {
                                 </div>
                                 <svg className="w-12 h-12 text-red-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
+                        </div>
+
+                        <div className="card bg-gradient-to-br from-orange-500 to-orange-600 text-white animate-slide-up delay-500 hover-lift">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-orange-100 text-sm font-medium">Today On Leave</p>
+                                    <p className="text-4xl font-bold mt-2">{stats.todayOnLeave || 0}</p>
+                                </div>
+                                <svg className="w-12 h-12 text-orange-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                 </svg>
                             </div>
                         </div>

@@ -23,7 +23,9 @@ We went the extra mile to include advanced features:
 - **📧 Real Email Notifications:** Integrated **Nodemailer** to send actual emails to employees when their leave status changes.
 - **📊 Monthly Reports & CSV Export:** Admins can generate and download detailed monthly attendance reports.
 - **🔍 Advanced Filtering & Pagination:** Implemented server-side pagination and dynamic filters (by Date, Status, Employee Name) for large datasets.
-- **⚙️ Auto Absent System:** Intelligent background logic that automatically marks "Absent" for missed days.
+- **⚙️ Auto Absent Cron Job:** A background Node-Cron job that runs daily at 11:59 PM IST to automatically mark employees as "Absent" if they missed marking attendance, ensuring no gaps in data.
+- **👑 Admin Attendance Override:** Admins have absolute control and can manually edit any employee's attendance status. The system features an intelligent overlap engine that automatically splits/shrinks Leave requests and correctly refunds/deducts leave balances if an Admin marks a "Leave" day as "Present".
+- **🔄 Smart Leave Synchronization:** The frontend dynamically merges adjacent or overlapping approved leave requests to show continuous blocks to the user, preventing confusion on the "Mark Attendance" page.
 
 ---
 
@@ -119,6 +121,7 @@ npm run dev
 | POST | `/api/attendance/mark` | Mark attendance for today |
 | GET | `/api/attendance/my` | Get individual attendance history |
 | GET | `/api/attendance/all` | **(Admin)** Get all employees' attendance |
+| PUT | `/api/attendance/admin-update` | **(Admin)** Manually override attendance status |
 
 ---
 
@@ -153,8 +156,8 @@ This project was developed with a hybrid approach, leveraging AI tools to enhanc
 | **UI Design & CSS** | **Claude** | Used to generate clean, modern aesthetically pleasing UI components (gradients, cards, responsive tables) using Tailwind CSS. |
 | **Frontend logic** | **GitHub Copilot** | Assisted in writing repetitive boilerplate code for API service calls (`axios` setup) and form state handling. |
 | **Advanced Features** | **ChatGPT / Copilot** | Utilized for optimizing the Nodemailer configuration and generating the CSV Export logic (Blob creation). |
-| **Auto Absent Logic** | **GitHub Copilot** | Generated the logic for automatically marking "Absent" for past days using date comparisons. |
-| **Business Logic** | **Manual / ChatGPT** | Core logic for "Leave Balance Deduction", "Date Overlap Checks", and "Weekend Exclusion" was implemented manually with efficiency suggestions from ChatGPT. |
+| **Auto Absent Logic** | **GitHub Copilot / Deepmind AI** | Built robust background Node-Cron jobs to automatically fill missing attendance without modifying future approved leaves. |
+| **Business Logic** | **Deepmind AI** | Implemented complex algorithms for "Leave Balance Deduction/Refunds", "Intelligent Leave Splitting", "Date Overlap Checks", and "Weekend Exclusion". |
 
 **Statement of Originality:** While AI tools assisted in syntax generation and UI styling, the underlying business rules, validation logic, and integration of components were implemented and verified manually to meet the specific assignment requirements.
 

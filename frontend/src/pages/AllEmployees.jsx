@@ -85,7 +85,7 @@ const AllEmployees = () => {
 
                                     <div className="mt-4 pt-4 border-t border-gray-200">
                                         <h4 className="text-sm font-semibold text-gray-700 mb-2">Attendance Stats</h4>
-                                        <div className="grid grid-cols-3 gap-2 text-center">
+                                        <div className="grid grid-cols-4 gap-2 text-center">
                                             <div>
                                                 <p className="text-xs text-gray-600">Total</p>
                                                 <p className="text-lg font-bold text-gray-900">{employee.totalDays || 0}</p>
@@ -97,6 +97,10 @@ const AllEmployees = () => {
                                             <div>
                                                 <p className="text-xs text-gray-600">Absent</p>
                                                 <p className="text-lg font-bold text-red-600">{employee.absentDays || 0}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-xs text-gray-600">On Leave</p>
+                                                <p className="text-lg font-bold text-orange-500">{employee.leaveDays || 0}</p>
                                             </div>
                                         </div>
                                     </div>

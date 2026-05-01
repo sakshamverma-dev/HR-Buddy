@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getMyLeaves } from '../services/leaveService';
-import { getMyAttendance } from '../services/attendanceService';
+import { getMyAttendance, cleanLeaveConflicts } from '../services/attendanceService';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 
@@ -10,21 +10,74 @@ const EmployeeDashboard = () => {
     const { user, updateUser } = useAuth();
     const [leaves, setLeaves] = useState([]);
     const [attendance, setAttendance] = useState([]);
+    const [totalAttendanceCount, setTotalAttendanceCount] = useState(0);
+    const [leaveDateMap, setLeaveDateMap] = useState({}); // dateStr -> leave status
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         fetchData();
     }, []);
 
+    const toLocalStr = (d) => {
+        const dt = new Date(d);
+        return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+    };
+
     const fetchData = async () => {
         try {
+            try {
+                await cleanLeaveConflicts();
+            } catch (cleanupErr) {
+                console.warn('Cleanup skipped (non-critical):', cleanupErr.message);
+            }
+
             await updateUser();
             const [leavesData, attendanceData] = await Promise.all([
                 getMyLeaves(),
                 getMyAttendance(),
             ]);
-            setLeaves(leavesData.slice(0, 5)); // Recent 5
-            setAttendance(attendanceData.slice(0, 5)); // Recent 5
+
+            // Build leave date map for UI display
+            const ldMap = {};
+            leavesData.forEach(leave => {
+                if (!['Approved', 'Pending'].includes(leave.status)) return;
+                const start = new Date(leave.startDate);
+                const end = new Date(leave.endDate);
+                start.setHours(0, 0, 0, 0);
+                end.setHours(0, 0, 0, 0);
+                let cur = new Date(start);
+                while (cur <= end) {
+                    if (cur.getDay() !== 0) {
+                        const dk = toLocalStr(cur);
+                        if (!ldMap[dk] || leave.status === 'Approved') ldMap[dk] = leave.status;
+                    }
+                    cur.setDate(cur.getDate() + 1);
+                }
+            });
+            setLeaveDateMap(ldMap);
+
+            // Filter out attendance records on leave dates for Recent Attendance
+            const filteredAttendance = attendanceData.filter(r => !ldMap[toLocalStr(new Date(r.date))]);
+
+            // Calculate approved leave days count
+            let approvedLeaveCount = 0;
+            leavesData.forEach(leave => {
+                if (leave.status === 'Approved') {
+                    const start = new Date(leave.startDate);
+                    const end = new Date(leave.endDate);
+                    start.setHours(0, 0, 0, 0);
+                    end.setHours(0, 0, 0, 0);
+                    let cur = new Date(start);
+                    while (cur <= end) {
+                        if (cur.getDay() !== 0) approvedLeaveCount++;
+                        cur.setDate(cur.getDate() + 1);
+                    }
+                }
+            });
+
+            setTotalAttendanceCount(filteredAttendance.length + approvedLeaveCount);
+            setLeaves(leavesData.slice(0, 5));
+            setAttendance(filteredAttendance.slice(0, 5));
         } catch (error) {
             console.error('Error fetching data:', error);
         } finally {
@@ -63,7 +116,7 @@ const EmployeeDashboard = () => {
 
                         <div className="card bg-gradient-to-br from-green-500 to-green-600 text-white animate-slide-up delay-200 hover-lift">
                             <h3 className="text-lg font-semibold mb-2">Total Attendance</h3>
-                            <p className="text-4xl font-bold">{attendance.length}</p>
+                            <p className="text-4xl font-bold">{totalAttendanceCount}</p>
                             <p className="text-green-100 mt-2">Days marked</p>
                         </div>
 

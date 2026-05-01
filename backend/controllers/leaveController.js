@@ -1,5 +1,6 @@
 const Leave = require('../models/Leave');
 const User = require('../models/User');
+const Attendance = require('../models/Attendance');
 const sendEmail = require('../utils/emailService');
 
 // Calculate days between two dates (excluding Sundays)
@@ -256,6 +257,22 @@ const updateLeaveStatus = async (req, res) => {
             user = await User.findById(leave.userId);
             user.leaveBalance -= leave.totalDays;
             await user.save();
+
+            // Delete any attendance records within the approved leave date range
+            // This handles cases where employee marked Present/Absent before leave was approved
+            const leaveStart = new Date(leave.startDate);
+            const leaveEnd = new Date(leave.endDate);
+            leaveStart.setHours(0, 0, 0, 0);
+            leaveEnd.setHours(23, 59, 59, 999);
+
+            const deletedCount = await Attendance.deleteMany({
+                userId: leave.userId,
+                date: { $gte: leaveStart, $lte: leaveEnd },
+            });
+
+            if (deletedCount.deletedCount > 0) {
+                console.log(`🗑️ Deleted ${deletedCount.deletedCount} attendance record(s) for approved leave of userId: ${leave.userId}`);
+            }
         } else {
             // Fetch user for email even if rejected
             user = await User.findById(leave.userId);

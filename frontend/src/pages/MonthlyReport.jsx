@@ -90,13 +90,14 @@ const MonthlyReport = () => {
         const [month, year] = selectedMonthYear.split('-');
         const selectedOption = monthOptions.find(opt => opt.month === parseInt(month) && opt.year === parseInt(year));
 
-        const headers = ['Employee Name', 'Email', 'Total Days', 'Present Days', 'Absent Days', 'Unrecorded Days', 'Attendance %'];
+        const headers = ['Employee Name', 'Email', 'Total Working Days', 'Present Days', 'Absent Days', 'Leave Days', 'Unrecorded Days', 'Attendance %'];
         const rows = filteredEmployees.map(emp => [
             emp.fullName,
             emp.email,
             emp.totalDays,
             emp.presentDays,
             emp.absentDays,
+            emp.leaveDays,
             emp.unrecordedDays,
             emp.attendancePercentage + '%'
         ]);
@@ -173,7 +174,7 @@ const MonthlyReport = () => {
                     {reportData && (
                         <>
                             {/* Statistics Cards */}
-                            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+                            <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-6">
                                 <div className="card bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 animate-slide-up delay-100 hover-lift">
                                     <div className="text-sm font-medium text-blue-600">Total Employees</div>
                                     <div className="text-3xl font-bold text-blue-900 mt-2">
@@ -196,6 +197,12 @@ const MonthlyReport = () => {
                                     <div className="text-sm font-medium text-red-600">Total Absent</div>
                                     <div className="text-3xl font-bold text-red-900 mt-2">
                                         {reportData.statistics.totalAbsentDays}
+                                    </div>
+                                </div>
+                                <div className="card bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200 animate-slide-up delay-500 hover-lift">
+                                    <div className="text-sm font-medium text-orange-600">Total Leave Days</div>
+                                    <div className="text-3xl font-bold text-orange-900 mt-2">
+                                        {reportData.statistics.totalLeaveDays || 0}
                                     </div>
                                 </div>
                             </div>
@@ -229,9 +236,10 @@ const MonthlyReport = () => {
                                             <thead>
                                                 <tr>
                                                     <th>Employee</th>
-                                                    <th>Total Days</th>
+                                                    <th>Working Days</th>
                                                     <th>Present</th>
                                                     <th>Absent</th>
+                                                    <th>Leave</th>
                                                     <th>Unrecorded</th>
                                                     <th>Attendance %</th>
                                                 </tr>
@@ -240,29 +248,18 @@ const MonthlyReport = () => {
                                                 {currentItems.map((employee, index) => (
                                                     <tr key={employee.employeeId} className="animate-fade-in" style={{ animationDelay: `${index * 50}ms` }}>
                                                         <td>
-                                                            <div className="text-sm font-medium text-gray-900">
-                                                                {employee.fullName}
-                                                            </div>
-                                                            <div className="text-sm text-gray-500">
-                                                                {employee.email}
-                                                            </div>
+                                                            <div className="text-sm font-medium text-gray-900">{employee.fullName}</div>
+                                                            <div className="text-sm text-gray-500">{employee.email}</div>
                                                         </td>
                                                         <td>{employee.totalDays}</td>
+                                                        <td><span className="text-green-600 font-medium">{employee.presentDays}</span></td>
+                                                        <td><span className="text-red-600 font-medium">{employee.absentDays}</span></td>
                                                         <td>
-                                                            <span className="text-green-600 font-medium">
-                                                                {employee.presentDays}
+                                                            <span style={{ color: '#c2410c', fontWeight: 600 }}>
+                                                                {employee.leaveDays || 0}
                                                             </span>
                                                         </td>
-                                                        <td>
-                                                            <span className="text-red-600 font-medium">
-                                                                {employee.absentDays}
-                                                            </span>
-                                                        </td>
-                                                        <td>
-                                                            <span className="text-gray-500">
-                                                                {employee.unrecordedDays}
-                                                            </span>
-                                                        </td>
+                                                        <td><span className="text-gray-500">{employee.unrecordedDays}</span></td>
                                                         <td>
                                                             <span className={getAttendanceColor(employee.attendancePercentage)}>
                                                                 {employee.attendancePercentage}%

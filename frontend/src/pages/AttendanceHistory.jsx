@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { getMyAttendance } from '../services/attendanceService';
+import { getMyLeaves } from '../services/leaveService';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import AttendanceCalendar from '../components/AttendanceCalendar';
 
 const AttendanceHistory = () => {
     const [attendance, setAttendance] = useState([]);
+    const [leaves, setLeaves] = useState([]);
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState('all');
     const [currentPage, setCurrentPage] = useState(1);
@@ -17,25 +19,22 @@ const AttendanceHistory = () => {
 
     const fetchAttendance = async () => {
         try {
-            const data = await getMyAttendance();
-            setAttendance(data);
+            const [attendanceData, leaveData] = await Promise.all([
+                getMyAttendance(),
+                getMyLeaves(),
+            ]);
+            setAttendance(attendanceData);
+            setLeaves(leaveData);
         } catch (error) {
-            console.error('Error fetching attendance:', error);
+            console.error('Error fetching data:', error);
         } finally {
             setLoading(false);
         }
     };
 
-    const filteredAttendance = attendance.filter((record) => {
-        if (filter === 'all') return true;
-        return record.status === filter;
-    });
-
-    // Pagination calculations
-    const totalPages = Math.ceil(filteredAttendance.length / itemsPerPage);
+    // filteredAttendance and pagination are defined after leaveDateMap (below)
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-    const currentItems = filteredAttendance.slice(indexOfFirstItem, indexOfLastItem);
 
     // Reset to page 1 when filter changes
     useEffect(() => {
@@ -54,11 +53,125 @@ const AttendanceHistory = () => {
         if (currentPage < totalPages) setCurrentPage(currentPage + 1);
     };
 
-    const stats = {
-        total: attendance.length,
-        present: attendance.filter((r) => r.status === 'Present').length,
-        absent: attendance.filter((r) => r.status === 'Absent').length,
+    // Helper: local date string
+    const toLocalDateStr = (date) => {
+        const d = new Date(date);
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     };
+
+    // Build approved-leave date set (excluded from stats, counted as Leave days)
+    const approvedLeaveDates = new Set();
+    leaves.filter(l => l.status === 'Approved').forEach(leave => {
+        const start = new Date(leave.startDate);
+        const end = new Date(leave.endDate);
+        start.setHours(0, 0, 0, 0);
+        end.setHours(0, 0, 0, 0);
+        let cur = new Date(start);
+        while (cur <= end) {
+            if (cur.getDay() !== 0) approvedLeaveDates.add(toLocalDateStr(cur));
+            cur.setDate(cur.getDate() + 1);
+        }
+    });
+
+    // Build pending-leave date set (also excluded from stats — held pending decision)
+    const pendingLeaveDates = new Set();
+    leaves.filter(l => l.status === 'Pending').forEach(leave => {
+        const start = new Date(leave.startDate);
+        const end = new Date(leave.endDate);
+        start.setHours(0, 0, 0, 0);
+        end.setHours(0, 0, 0, 0);
+        let cur = new Date(start);
+        while (cur <= end) {
+            if (cur.getDay() !== 0) pendingLeaveDates.add(toLocalDateStr(cur));
+            cur.setDate(cur.getDate() + 1);
+        }
+    });
+
+    // Build full leave date map (Approved + Pending, no Sundays) for table badge display
+    const leaveDateMap = {}; // dateStr -> leave status
+    leaves.forEach(leave => {
+        if (!['Approved', 'Pending'].includes(leave.status)) return;
+        const start = new Date(leave.startDate);
+        const end = new Date(leave.endDate);
+        start.setHours(0, 0, 0, 0);
+        end.setHours(0, 0, 0, 0);
+        let cur = new Date(start);
+        while (cur <= end) {
+            if (cur.getDay() !== 0) {
+                const dk = toLocalDateStr(cur);
+                if (!leaveDateMap[dk] || leave.status === 'Approved') {
+                    leaveDateMap[dk] = leave.status;
+                }
+            }
+            cur.setDate(cur.getDate() + 1);
+        }
+    });
+
+    // Stats — exclude Sundays, Approved leave days, AND Pending leave days
+    const isCountable = (r) => {
+        const dk = toLocalDateStr(new Date(r.date));
+        return new Date(r.date).getDay() !== 0 &&
+               !approvedLeaveDates.has(dk) &&
+               !pendingLeaveDates.has(dk);
+    };
+
+    const stats = {
+        total: attendance.filter(isCountable).length + approvedLeaveDates.size,
+        present: attendance.filter(r => r.status === 'Present' && isCountable(r)).length,
+        absent: attendance.filter(r => r.status === 'Absent' && isCountable(r)).length,
+        leave: approvedLeaveDates.size,
+    };
+
+
+    // Build virtual leave rows (individual day entries) from leaves data
+    // These are used for the Leave filter and for All filter (merging with attendance)
+    const leaveRows = [];
+    leaves.forEach(leave => {
+        if (!['Approved', 'Pending'].includes(leave.status)) return;
+        const start = new Date(leave.startDate);
+        const end = new Date(leave.endDate);
+        start.setHours(0, 0, 0, 0);
+        end.setHours(0, 0, 0, 0);
+        let cur = new Date(start);
+        while (cur <= end) {
+            if (cur.getDay() !== 0) { // skip Sundays
+                leaveRows.push({
+                    _id: `leave-${leave._id}-${toLocalDateStr(cur)}`,
+                    date: new Date(cur).toISOString(),
+                    _leaveStatus: leave.status,
+                    _isLeaveRow: true,
+                });
+            }
+            cur.setDate(cur.getDate() + 1);
+        }
+    });
+
+    // filteredAttendance — Leave-aware filtering
+    let filteredAttendance;
+    if (filter === 'Leave') {
+        // Show only leave virtual rows
+        filteredAttendance = leaveRows;
+    } else if (filter === 'all') {
+        // Merge: attendance records (non-leave days) + leave virtual rows
+        const nonLeavAttendance = attendance.filter(r => {
+            const dk = toLocalDateStr(new Date(r.date));
+            return !leaveDateMap[dk]; // exclude dates covered by leave
+        });
+        // Combine and sort by date descending
+        filteredAttendance = [...nonLeavAttendance, ...leaveRows].sort(
+            (a, b) => new Date(b.date) - new Date(a.date)
+        );
+    } else {
+        // Present / Absent: exclude leave dates
+        filteredAttendance = attendance.filter(r => {
+            const dk = toLocalDateStr(new Date(r.date));
+            if (leaveDateMap[dk]) return false;
+            return r.status === filter;
+        });
+    }
+
+    const totalPages = Math.ceil(filteredAttendance.length / itemsPerPage);
+    const currentItems = filteredAttendance.slice(indexOfFirstItem, indexOfLastItem);
 
     if (loading) {
         return (
@@ -82,7 +195,7 @@ const AttendanceHistory = () => {
                     </div>
 
                     {/* Stats */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
                         <div className="card bg-gradient-to-br from-primary-500 to-primary-600 text-white animate-slide-up delay-100">
                             <h3 className="text-lg font-semibold mb-2">Total Days</h3>
                             <p className="text-4xl font-bold">{stats.total}</p>
@@ -95,20 +208,24 @@ const AttendanceHistory = () => {
                             <h3 className="text-lg font-semibold mb-2">Absent</h3>
                             <p className="text-4xl font-bold">{stats.absent}</p>
                         </div>
+                        <div className="card bg-gradient-to-br from-orange-400 to-orange-500 text-white animate-slide-up delay-400">
+                            <h3 className="text-lg font-semibold mb-2">On Leave</h3>
+                            <p className="text-4xl font-bold">{stats.leave}</p>
+                        </div>
                     </div>
 
                     {/* Calendar and Table Grid */}
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         {/* Visual Calendar - Takes 1 column on large screens */}
                         <div className="lg:col-span-1">
-                            <AttendanceCalendar attendanceRecords={attendance} />
+                            <AttendanceCalendar attendanceRecords={attendance} leaveRecords={leaves} />
                         </div>
 
                         {/* Attendance Table - Takes 2 columns on large screens */}
                         <div className="lg:col-span-2">
                             <div className="card animate-slide-up delay-400">
                                 {/* Filter */}
-                                <div className="mb-6 flex space-x-4">
+                                <div className="mb-6 flex space-x-3 flex-wrap gap-y-2">
                                     <button
                                         onClick={() => setFilter('all')}
                                         className={`px-4 py-2 rounded-lg ${filter === 'all' ? 'bg-primary-600 text-white' : 'bg-gray-200 text-gray-700'
@@ -130,6 +247,13 @@ const AttendanceHistory = () => {
                                     >
                                         Absent
                                     </button>
+                                    <button
+                                        onClick={() => setFilter('Leave')}
+                                        className={`px-4 py-2 rounded-lg ${filter === 'Leave' ? 'bg-orange-500 text-white' : 'bg-gray-200 text-gray-700'
+                                            }`}
+                                    >
+                                        On Leave
+                                    </button>
                                 </div>
 
                                 {filteredAttendance.length > 0 ? (
@@ -145,6 +269,12 @@ const AttendanceHistory = () => {
                                             <tbody>
                                                 {currentItems.map((record, index) => {
                                                     const date = new Date(record.date);
+                                                    const isSunday = date.getDay() === 0;
+                                                    const dateKey = toLocalDateStr(date);
+                                                    // Virtual leave row has _leaveStatus; real attendance rows use leaveDateMap
+                                                    const leaveStatus = record._isLeaveRow
+                                                        ? record._leaveStatus
+                                                        : leaveDateMap[dateKey];
                                                     return (
                                                         <tr key={record._id} className="animate-fade-in" style={{ animationDelay: `${index * 50}ms` }}>
                                                             <td>
@@ -154,7 +284,19 @@ const AttendanceHistory = () => {
                                                                 {date.toLocaleDateString('en-US', { weekday: 'long' })}
                                                             </td>
                                                             <td>
-                                                                <span className={`badge-${record.status.toLowerCase()}`}>{record.status}</span>
+                                                                {isSunday ? (
+                                                                    <span className="badge" style={{ background: '#f3f4f6', color: '#9ca3af', border: '1px solid #e5e7eb' }}>Sunday (Off)</span>
+                                                                ) : leaveStatus ? (
+                                                                    <span className="badge" style={{
+                                                                        background: leaveStatus === 'Approved' ? '#fff7ed' : '#fffbeb',
+                                                                        color: leaveStatus === 'Approved' ? '#c2410c' : '#b45309',
+                                                                        border: `1px solid ${leaveStatus === 'Approved' ? '#fdba74' : '#fcd34d'}`,
+                                                                    }}>
+                                                                        {leaveStatus === 'Approved' ? '🟠 On Leave' : '🟡 On Leave (Pending)'}
+                                                                    </span>
+                                                                ) : (
+                                                                    <span className={`badge-${record.status.toLowerCase()}`}>{record.status}</span>
+                                                                )}
                                                             </td>
                                                         </tr>
                                                     );

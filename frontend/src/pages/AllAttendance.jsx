@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { getAllAttendance } from '../services/attendanceService';
+import { adminUpdateAttendance } from '../services/attendanceService';
+import { getAllLeaves } from '../services/leaveService';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 
@@ -11,6 +13,29 @@ const AllAttendance = () => {
     const [dateFrom, setDateFrom] = useState('');
     const [dateTo, setDateTo] = useState('');
 
+    const [editingRecordId, setEditingRecordId] = useState(null);
+    const [editStatus, setEditStatus] = useState('');
+
+    const handleEditClick = (record) => {
+        setEditingRecordId(record._id);
+        setEditStatus(record.isVirtual ? 'Leave' : record.status);
+    };
+
+    const handleSaveStatus = async (record) => {
+        try {
+            await adminUpdateAttendance(record.userId._id, record.date, editStatus);
+            setEditingRecordId(null);
+            fetchAttendance(); // Refresh data
+        } catch (error) {
+            alert(error.response?.data?.message || 'Error updating status');
+        }
+    };
+
+    const handleCancelEdit = () => {
+        setEditingRecordId(null);
+        setEditStatus('');
+    };
+
     // Pagination state
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
@@ -21,10 +46,59 @@ const AllAttendance = () => {
 
     const fetchAttendance = async () => {
         try {
-            const data = await getAllAttendance();
-            setAttendance(data);
+            const [attendanceData, leavesData] = await Promise.all([
+                getAllAttendance(),
+                getAllLeaves()
+            ]);
+
+            const virtualAttendance = [...attendanceData];
+            const toLocalDateStr = (d) => {
+                const dt = new Date(d);
+                return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+            };
+
+            const existingDatesByUser = {};
+            attendanceData.forEach(r => {
+                if (r.userId?._id) {
+                    if (!existingDatesByUser[r.userId._id]) existingDatesByUser[r.userId._id] = new Set();
+                    existingDatesByUser[r.userId._id].add(toLocalDateStr(new Date(r.date)));
+                }
+            });
+
+            leavesData.forEach(leave => {
+                if (leave.status !== 'Approved') return;
+                const start = new Date(leave.startDate);
+                const end = new Date(leave.endDate);
+                start.setHours(0, 0, 0, 0);
+                end.setHours(0, 0, 0, 0);
+                let cur = new Date(start);
+                while (cur <= end) {
+                    if (cur.getDay() !== 0) {
+                        const dateStr = toLocalDateStr(cur);
+                        const userId = leave.userId?._id;
+                        if (userId) {
+                            if (!existingDatesByUser[userId]) existingDatesByUser[userId] = new Set();
+                            if (!existingDatesByUser[userId].has(dateStr)) {
+                                existingDatesByUser[userId].add(dateStr);
+                                virtualAttendance.push({
+                                    _id: `leave-${leave._id}-${dateStr}`,
+                                    userId: leave.userId,
+                                    date: new Date(cur).toISOString(),
+                                    status: 'Leave',
+                                    isVirtual: true
+                                });
+                            }
+                        }
+                    }
+                    cur.setDate(cur.getDate() + 1);
+                }
+            });
+
+            // Sort by date descending
+            virtualAttendance.sort((a, b) => new Date(b.date) - new Date(a.date));
+            setAttendance(virtualAttendance);
         } catch (error) {
-            console.error('Error fetching attendance:', error);
+            console.error('Error fetching attendance/leaves:', error);
         } finally {
             setLoading(false);
         }
@@ -164,6 +238,13 @@ const AllAttendance = () => {
                                 >
                                     Absent
                                 </button>
+                                <button
+                                    onClick={() => setFilter('Leave')}
+                                    className={`px-4 py-2 rounded-lg ${filter === 'Leave' ? 'bg-orange-600 text-white' : 'bg-gray-200 text-gray-700'
+                                        }`}
+                                >
+                                    On Leave
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -178,6 +259,7 @@ const AllAttendance = () => {
                                             <th>Date</th>
                                             <th>Day</th>
                                             <th>Status</th>
+                                            <th>Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -196,7 +278,46 @@ const AllAttendance = () => {
                                                         {date.toLocaleDateString('en-US', { weekday: 'long' })}
                                                     </td>
                                                     <td>
-                                                        <span className={`badge-${record.status.toLowerCase()}`}>{record.status}</span>
+                                                        {editingRecordId === record._id ? (
+                                                            <select
+                                                                value={editStatus}
+                                                                onChange={(e) => setEditStatus(e.target.value)}
+                                                                className="input-field py-1 px-2 text-sm"
+                                                            >
+                                                                <option value="Present">Present</option>
+                                                                <option value="Absent">Absent</option>
+                                                                <option value="Leave">On Leave</option>
+                                                            </select>
+                                                        ) : (
+                                                            <span className={record.isVirtual ? 'badge-leave' : `badge-${record.status.toLowerCase()}`}>
+                                                                {record.isVirtual ? 'On Leave' : record.status}
+                                                            </span>
+                                                        )}
+                                                    </td>
+                                                    <td>
+                                                        {editingRecordId === record._id ? (
+                                                            <div className="flex space-x-2">
+                                                                <button
+                                                                    onClick={() => handleSaveStatus(record)}
+                                                                    className="text-green-600 hover:text-green-900 font-medium text-sm"
+                                                                >
+                                                                    Save
+                                                                </button>
+                                                                <button
+                                                                    onClick={handleCancelEdit}
+                                                                    className="text-gray-500 hover:text-gray-700 font-medium text-sm"
+                                                                >
+                                                                    Cancel
+                                                                </button>
+                                                            </div>
+                                                        ) : (
+                                                            <button
+                                                                onClick={() => handleEditClick(record)}
+                                                                className="text-primary-600 hover:text-primary-900 font-medium text-sm"
+                                                            >
+                                                                Edit
+                                                            </button>
+                                                        )}
                                                     </td>
                                                 </tr>
                                             );
